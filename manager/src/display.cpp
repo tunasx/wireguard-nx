@@ -14,10 +14,18 @@ void ManagerDisplay::initialize() {
     rc = plGetSharedFontByType(&standard, PlSharedFontType_Standard);
     if (R_FAILED(rc))
         diagAbortWithResult(rc);
-    if (!stbtt_InitFont(&fonts[0], static_cast<const unsigned char*>(standard.address), 0))
+    if (!stbtt_InitFont(
+            &fonts[0],
+            static_cast<const unsigned char*>(standard.address),
+            stbtt_GetFontOffsetForIndex(static_cast<const unsigned char*>(standard.address), 0)
+        ))
         diagAbortWithResult(MAKERESULT(Module_Libnx, LibnxError_BadInput));
     hasChinese = R_SUCCEEDED(plGetSharedFontByType(&chinese, PlSharedFontType_ChineseSimplified)) &&
-                 stbtt_InitFont(&fonts[1], static_cast<const unsigned char*>(chinese.address), 0);
+                 stbtt_InitFont(
+                     &fonts[1],
+                     static_cast<const unsigned char*>(chinese.address),
+                     stbtt_GetFontOffsetForIndex(static_cast<const unsigned char*>(chinese.address), 0)
+                 );
     rc = framebufferCreate(&framebuffer, nwindowGetDefault(), Width, Height, PIXEL_FORMAT_RGBA_8888, 2);
     if (R_FAILED(rc))
         diagAbortWithResult(rc);

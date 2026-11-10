@@ -31,13 +31,16 @@ jobs:
         run: |
           apt-get update
           apt-get install -y --no-install-recommends build-essential python3 zip
-      - name: Build all four components
+      - name: Build UTF-8 manager
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          make -C wg-sysmodule dist -j2
-          make -C mitm-sysmodule dist -j2
           make -C manager -j2
-          make -C overlay -j2
+      - name: Build localized overlay
+        run: make -C overlay -j2
+      - name: Build WireGuard sysmodule
+        run: make -C wg-sysmodule dist -j2
+      - name: Build MITM sysmodule
+        run: make -C mitm-sysmodule dist -j2
       - name: Assemble SD card package
         run: |
           mkdir -p package/switch/.overlays package/switch/wireguard-nx package/config/wireguard-nx
