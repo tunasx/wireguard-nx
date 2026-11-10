@@ -1,0 +1,16 @@
+# Keep the Address, keys and Endpoint from your existing ASUS client profile.
+# This is an example only; do not copy placeholder keys into your working profile.
+[Interface]
+Address = <address from ASUS>
+PrivateKey = <private key from ASUS>
+
+[Peer]
+PublicKey = <server public key from ASUS>
+PresharedKey = <optional preshared key from ASUS>
+Endpoint = <home public hostname or IP>:<WireGuard port>
+# Add the home LAN to your existing routes. 0.0.0.0/0 already includes it.
+AllowedIPs = 192.168.1.0/24
+PersistentKeepalive = 25
+
+# Optional Moonlight name for the PC behind the ASUS router (not the router peer).
+# Host = home-pc 192.168.1.100

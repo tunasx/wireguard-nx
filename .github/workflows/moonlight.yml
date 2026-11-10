@@ -1,0 +1,85 @@
+name: Build Moonlight packages
+
+on:
+  push:
+    paths:
+      - '.github/workflows/moonlight.yml'
+      - 'integrations/moonlight/**'
+      - '.gitmodules'
+      - 'common/lib/libnx'
+  pull_request:
+    paths:
+      - '.github/workflows/moonlight.yml'
+      - 'integrations/moonlight/**'
+      - '.gitmodules'
+      - 'common/lib/libnx'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  protocol-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check out the pinned Moonlight engine
+        run: git submodule update --init integrations/moonlight/upstream
+      - name: Install the pinned Rust toolchain
+        run: |
+          toolchain=$(python3 -c 'import json; print(json.load(open("integrations/moonlight/dependencies.json"))["rust_toolchain"])')
+          rustup toolchain install "$toolchain" --profile minimal
+          echo "RUSTUP_TOOLCHAIN=$toolchain" >> "$GITHUB_ENV"
+      - name: Test TCP, UDP, routing and protocol state
+        working-directory: integrations/moonlight/upstream
+        run: |
+          cargo test --locked -p wgnx-core
+          cargo test --locked -p wgnx-core --features switch-limits
+
+  switch:
+    runs-on: ubuntu-24.04
+    container: devkitpro/devkita64:latest
+    env:
+      RUSTUP_HOME: /opt/rustup
+      CARGO_HOME: /opt/cargo
+      CARGO_TARGET_DIR: ${{ github.workspace }}/integrations/moonlight/upstream/target/switch
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Install build utilities and dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential python3 curl ca-certificates
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git submodule update --init --recursive --depth 1 integrations/moonlight/upstream common/lib/libnx
+          for dir in integrations/moonlight/upstream integrations/moonlight/upstream/third_party/Atmosphere integrations/moonlight/upstream/third_party/libtesla common/lib/libnx; do
+            git config --global --add safe.directory "$GITHUB_WORKSPACE/$dir"
+          done
+      - name: Prepare HOS 23.0.1 support
+        run: python3 integrations/moonlight/prepare.py
+      - name: Install pinned Rust with Switch build-std support
+        run: |
+          toolchain=$(python3 -c 'import json; print(json.load(open("integrations/moonlight/dependencies.json"))["rust_toolchain"])')
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain "$toolchain" -c rust-src --no-modify-path
+          echo "$CARGO_HOME/bin" >> "$GITHUB_PATH"
+      - name: Build matching libnx
+        run: make -C common/lib/libnx install -j2
+      - name: Build Moonlight sysmodule and enforce its memory budget
+        working-directory: integrations/moonlight/upstream
+        run: make IN_DOCKER=1 RUST_SWITCH_FLAGS='--release --locked --target aarch64-nintendo-switch-freestanding -Zbuild-std=core,alloc' sysmodule
+      - name: Build Moonlight overlay
+        working-directory: integrations/moonlight/upstream
+        run: make IN_DOCKER=1 APP_TITLE='WireGuard Moonlight' overlay
+      - name: Package module, overlay and matching debug symbols
+        run: python3 integrations/moonlight/package.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wireguard-nx-moonlight-sdcard
+          path: moonlight-artifacts/wireguard-nx-moonlight-sdcard.zip
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wireguard-nx-moonlight-debug-symbols
+          path: moonlight-artifacts/wireguard-nx-moonlight-debug-symbols.zip
+          if-no-files-found: error

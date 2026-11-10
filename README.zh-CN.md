@@ -2,6 +2,11 @@
 
 本 fork 为管理程序（NRO）和 Ultrahand 悬浮菜单（OVL）增加英文 / 简体中文支持，并通过 GitHub Actions 编译四个组件。
 
+如果目标是 **Switch 自己连接 WireGuard，再用 Moonlight 访问家里 PC**，请使用
+**Actions → Build Moonlight packages** 的独立安装包，并先阅读
+[Moonlight 安装与迁移说明](integrations/moonlight/README.zh-CN.md)。它采用已有 TCP/UDP
+接管实现，需要停用下面旧实验模块的 EAD0/EAD3 自启。
+
 ## 下载与安装
 
 1. 打开本仓库的 **Actions → Build Switch packages**，选择成功的运行。

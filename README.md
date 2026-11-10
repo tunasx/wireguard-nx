@@ -3,6 +3,11 @@
 [简体中文：安装、语言设置与 Actions 构建](README.zh-CN.md)
 
 This fork adds English / Simplified Chinese UI localization and GitHub Actions builds.
+For Moonlight streaming over a WireGuard connection on the Switch itself, use the
+separate **Build Moonlight packages** workflow and its
+[installation/migration guide](integrations/moonlight/README.zh-CN.md). This build
+integrates a pinned TCP/UDP-capable upstream implementation and replaces the
+experimental EAD0/EAD3 deployment.
 Both the manager and overlay select the system language, with an optional
 `sd:/config/wireguard-nx/language.txt` override (`en`, `zh-CN`, or `auto`).
 

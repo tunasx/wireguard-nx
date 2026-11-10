@@ -8,3 +8,6 @@
 [submodule "common/lib/libnx"]
 	path = common/lib/libnx
 	url = https://github.com/switchbrew/libnx.git
+[submodule "integrations/moonlight/upstream"]
+	path = integrations/moonlight/upstream
+	url = https://github.com/UnderwaterOverground/wireguard-nx.git
