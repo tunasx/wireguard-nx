@@ -31,6 +31,7 @@
 系统模块现使用官方 Atmosphere-libs 的固定提交，包含系统 **23.0.1** 的支持，
 并保留项目所需的 MITM 内存分配及 socket 修复。旧依赖只接受 22.1.x，
 会在 23.x 上进入主程序前触发 `std::abort (0xFFE)`。
+同时固定了包含 23.x 文件系统接口的官方 libnx；Actions 会先从源码构建并安装它。
 更新已有源码后，请同步子模块并清理旧构建；具体命令见
 [`common/patches/README.md`](common/patches/README.md)。
 该适配仍需在真机上确认启动、连接及关闭行为。

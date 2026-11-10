@@ -37,6 +37,8 @@ jobs:
           git config --global --add safe.directory "$GITHUB_WORKSPACE/common/lib/Atmosphere-libs"
           python3 tools/test_prepare_atmosphere_libs.py
           python3 tools/prepare_atmosphere_libs.py
+      - name: Build matching libnx with HOS 23.x filesystem APIs
+        run: make -C common/lib/libnx install -j2
       - name: Build UTF-8 manager
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"

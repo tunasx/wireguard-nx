@@ -6,6 +6,12 @@ Horizon 23.0.1). Both sysmodules statically link this library. The previous fork
 was based on 22.1.0 and aborted during version initialization on 23.x, before
 the module's `ams::Main` could run.
 
+`common/lib/libnx` pins the official Switchbrew library at
+`b156b4774fb2df7b93402169509266da7547fc4c`. Its 23.x filesystem APIs, including
+`FsStorageForBatchRead`, are required by the new Atmosphere-libs. Actions builds
+and installs this version into its disposable devkitPro container before building
+any project component, rather than relying on the container's older bundled libnx.
+
 `atmosphere-libs-wgnx.patch` retains these project dependencies from
 `chrisbraucker/Atmosphere-libs` at `03a6b211c8d3934bf40f367da227437aaf2bde2e`:
 
@@ -28,12 +34,16 @@ After updating an existing checkout, run:
 ```sh
 git submodule sync --recursive
 git submodule update --init --recursive
+make -C common/lib/libnx install -j2
 make -C wg-sysmodule clean
 make -C mitm-sysmodule clean
 make -C wg-sysmodule dist
 make -C mitm-sysmodule dist
 make -C wg-sysmodule resource-report
 ```
+
+The libnx installation needs write access to `$DEVKITPRO/libnx` in the development
+environment. It is required once when this pinned dependency changes.
 
 The official firmware compatibility guard remains enabled. Both module entry
 points also require 23.0.1 support at compile time, so an older dependency cannot
