@@ -9,7 +9,10 @@
 namespace wgnx::i18n {
 enum class Language { English, ChineseSimplified };
 inline Language language = Language::English;
-struct Translation { const char* english; const char* chinese; };
+struct Translation {
+    const char* english;
+    const char* chinese;
+};
 inline constexpr Translation translations[] = {
     {"Off", "关闭"},
     {"On", "开启"},
@@ -80,7 +83,7 @@ inline constexpr Translation translations[] = {
     {"failed", "失败"},
     {"Initializing socket\n", "正在初始化套接字\n"},
     {"Initializing nifm\n", "正在初始化网络服务\n"},
-    {"Exit by pressing + or -\n", "按 + 或 - 退出；方向键上/下滚动\n"},
+    {"Press + or - to exit; Up/Down to scroll\n", "按 + 或 - 退出；方向键上/下滚动\n"},
     {"Press ZL to send a debug ping to 10.13.13.1 through the tunnel\n", "按 ZL 通过隧道向 10.13.13.1 发送调试 Ping\n"},
     {"Press ZR to send a debug ping to 1.1.1.1 through the tunnel\n", "按 ZR 通过隧道向 1.1.1.1 发送调试 Ping\n"},
     {"Press X to recreate the active tunnel's UDP binding\n", "按 X 重新创建活动隧道的 UDP 绑定\n"},
@@ -91,7 +94,8 @@ inline constexpr Translation translations[] = {
     {"WireGuard IPC API: v%u\n", "WireGuard IPC API：v%u\n"},
     {"Sysmodule Version: %s-%s\n", "系统模块版本：%s-%s\n"},
     {"WireGuard peers: %u | active=%d | autostart=%d | flags=0x%08X\n", "WireGuard 节点：%u | 活动=%d | 自启动=%d | 标志=0x%08X\n"},
-    {"[%u] %s | %s | endpoint=%s | local_pub=%s | state=%s stage=%s flags=0x%02X | hs=%d rx_age=%d tx_age=%d", "[%u] %s | %s | 端点=%s | 本地公钥=%s | 状态=%s 阶段=%s 标志=0x%02X | 握手=%d 接收=%d 发送=%d"},
+    {"[%u] %s | %s | endpoint=%s | local_pub=%s | state=%s stage=%s flags=0x%02X | hs=%d rx_age=%d tx_age=%d",
+     "[%u] %s | %s | 端点=%s | 本地公钥=%s | 状态=%s 阶段=%s 标志=0x%02X | 握手=%d 接收=%d 发送=%d"},
     {"<unavailable>", "<不可用>"},
     {" | probe=%s/%s/%ds", " | 探测=%s/%s/%d秒"},
     {" | ka=%us err=%s (0x%08X)\n", " | 保活=%u秒 错误=%s (0x%08X)\n"},
@@ -106,7 +110,8 @@ inline constexpr Translation translations[] = {
 inline const char* tr(const char* text) {
     if (language == Language::ChineseSimplified) {
         for (const auto& entry : translations) {
-            if (std::strcmp(text, entry.english) == 0) return entry.chinese;
+            if (std::strcmp(text, entry.english) == 0)
+                return entry.chinese;
         }
     }
     return text;
@@ -114,8 +119,14 @@ inline const char* tr(const char* text) {
 
 // Returns false for unknown values so callers can retain the system-language fallback.
 inline bool setLanguage(const char* value) {
-    if (std::strcmp(value, "en") == 0) { language = Language::English; return true; }
-    if (std::strcmp(value, "zh-CN") == 0) { language = Language::ChineseSimplified; return true; }
+    if (std::strcmp(value, "en") == 0) {
+        language = Language::English;
+        return true;
+    }
+    if (std::strcmp(value, "zh-CN") == 0) {
+        language = Language::ChineseSimplified;
+        return true;
+    }
     return false;
 }
 

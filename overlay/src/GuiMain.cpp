@@ -94,8 +94,14 @@ tsl::elm::Element* GuiMain::createUI() {
                     15,
                     tsl::warningTextColor
                 );
-                renderer
-                    ->drawString(tr("\uE016 Only one peer can be enabled for auto-start."), false, x + 5, y + 30, 15, tsl::warningTextColor);
+                renderer->drawString(
+                    tr("\uE016 Only one peer can be enabled for auto-start."),
+                    false,
+                    x + 5,
+                    y + 30,
+                    15,
+                    tsl::warningTextColor
+                );
             }),
             45
         );
@@ -155,7 +161,7 @@ tsl::elm::Element* GuiMain::createUI() {
             );
             renderer->drawString(
                 tr("Keepalive: ") + (peer.persistentKeepaliveInterval > 0 ? (std::to_string(peer.persistentKeepaliveInterval) + "s")
-                                                                      : std::string(tr("false"))),
+                                                                          : std::string(tr("false"))),
                 false,
                 x + 15,
                 y + 150,
@@ -164,7 +170,8 @@ tsl::elm::Element* GuiMain::createUI() {
             );
             if (peer.debugProbeStatus != static_cast<std::uint32_t>(wgnx::DebugProbeStatus::None)) {
                 renderer->drawString(
-                    tr("Probe: ") + std::string(tr(wgnx::GetDebugTriggerActionName(static_cast<wgnx::DebugTriggerAction>(peer.debugProbeAction)))) +
+                    tr("Probe: ") +
+                        std::string(tr(wgnx::GetDebugTriggerActionName(static_cast<wgnx::DebugTriggerAction>(peer.debugProbeAction)))) +
                         " / " + std::string(tr(wgnx::GetDebugProbeStatusName(static_cast<wgnx::DebugProbeStatus>(peer.debugProbeStatus)))) +
                         " / " + moment(peer.lastDebugProbe),
                     false,

@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
     if (R_FAILED(rc = nifmInitialize(NifmServiceType_User)))
         diagAbortWithResult(rc);
 
-    display.print(tr("Exit by pressing + or -\n"));
+    display.print(tr("Press + or - to exit; Up/Down to scroll\n"));
     display.print(tr("Press ZL to send a debug ping to 10.13.13.1 through the tunnel\n"));
     display.print(tr("Press ZR to send a debug ping to 1.1.1.1 through the tunnel\n"));
     display.print(tr("Press X to recreate the active tunnel's UDP binding\n"));
@@ -185,8 +185,10 @@ int main(int argc, char** argv) {
             }
         }
 
-        if (kDown & HidNpadButton_Up) display.scroll(-1);
-        if (kDown & HidNpadButton_Down) display.scroll(1);
+        if (kDown & HidNpadButton_Up)
+            display.scroll(-1);
+        if (kDown & HidNpadButton_Down)
+            display.scroll(1);
         display.update();
     }
 
