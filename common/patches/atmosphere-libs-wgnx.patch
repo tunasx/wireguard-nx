@@ -1,0 +1,148 @@
+diff --git a/libstratosphere/include/stratosphere/sf/hipc/sf_hipc_server_session_manager.hpp b/libstratosphere/include/stratosphere/sf/hipc/sf_hipc_server_session_manager.hpp
+index f31c2eaf..768d17df 100644
+--- a/libstratosphere/include/stratosphere/sf/hipc/sf_hipc_server_session_manager.hpp
++++ b/libstratosphere/include/stratosphere/sf/hipc/sf_hipc_server_session_manager.hpp
+@@ -16,6 +16,7 @@
+ 
+ #pragma once
+ #include <stratosphere/sf/sf_common.hpp>
++#include <stratosphere/sf/sf_exp_heap_allocator.hpp>
+ #include <stratosphere/sf/sf_mitm_config.hpp>
+ #include <stratosphere/sf/sf_service_object.hpp>
+ #include <stratosphere/sf/cmif/sf_cmif_pointer_and_size.hpp>
+@@ -89,13 +90,66 @@ namespace ams::sf::hipc {
+ 
+             Result ForwardRequest(const cmif::ServiceDispatchContext &ctx) const;
+ 
+-            static inline void ForwardServiceDeleter(Service *srv) {
+-                serviceClose(srv);
+-                delete srv;
++            /* System modules intentionally have no newlib heap for this lifetime. */
++            struct ForwardServiceAllocatorTag;
++            using ForwardServiceHeapAllocator = sf::ExpHeapStaticAllocator<8_KB, ForwardServiceAllocatorTag>;
++
++            struct ForwardServiceHolder {
++                ::Service service;
++
++                ForwardServiceHolder() : service{} {
++                    service.session = INVALID_HANDLE;
++                }
++
++                ~ForwardServiceHolder() {
++                    if (serviceIsActive(std::addressof(service))) {
++                        serviceClose(std::addressof(service));
++                    }
++                }
++            };
++
++            template<typename T>
++            class ForwardServiceSharedAllocator : public std::allocator<T> {
++              public:
++                template<typename U>
++                struct rebind {
++                    using other = ForwardServiceSharedAllocator<U>;
++                };
++
++                ForwardServiceSharedAllocator() = default;
++
++                template<typename U>
++                ForwardServiceSharedAllocator(const ForwardServiceSharedAllocator<U>&) {
++                }
++
++                [[nodiscard]] T* allocate(::std::size_t n) {
++                    EnsureForwardServiceAllocatorInitialized();
++                    return static_cast<T*>(ForwardServiceHeapAllocator::Allocate(sizeof(T) * n));
++                }
++
++                void deallocate(T* p, ::std::size_t n) {
++                    ForwardServiceHeapAllocator::Deallocate(p, sizeof(T) * n);
++                }
++            };
++
++            static inline void EnsureForwardServiceAllocatorInitialized() {
++                static constinit os::SdkMutex s_allocator_mutex;
++                static constinit bool s_allocator_initialized = false;
++
++                if (AMS_UNLIKELY(!s_allocator_initialized)) {
++                    std::scoped_lock lk(s_allocator_mutex);
++                    if (AMS_LIKELY(!s_allocator_initialized)) {
++                        ForwardServiceHeapAllocator::Initialize(lmem::CreateOption_ThreadSafe);
++                        s_allocator_initialized = true;
++                    }
++                }
+             }
+ 
+             static inline std::shared_ptr<::Service> CreateForwardService() {
+-                return std::shared_ptr<::Service>(new ::Service(), ForwardServiceDeleter);
++                EnsureForwardServiceAllocatorInitialized();
++
++                auto holder = std::allocate_shared<ForwardServiceHolder>(ForwardServiceSharedAllocator<ForwardServiceHolder>{});
++                return std::shared_ptr<::Service>(std::move(holder), std::addressof(holder->service));
+             }
+             #endif
+     };
+diff --git a/libstratosphere/source/sf/hipc/sf_hipc_mitm_query_api.cpp b/libstratosphere/source/sf/hipc/sf_hipc_mitm_query_api.cpp
+index 2f7dd5e7..e1c30e02 100644
+--- a/libstratosphere/source/sf/hipc/sf_hipc_mitm_query_api.cpp
++++ b/libstratosphere/source/sf/hipc/sf_hipc_mitm_query_api.cpp
+@@ -51,6 +51,12 @@ namespace ams::sf::hipc::impl {
+         alignas(os::ThreadStackAlignment) constinit u8 g_server_process_thread_stack[16_KB];
+         constinit os::ThreadType g_query_server_process_thread;
+ 
++        /* MITM query objects cannot use the disabled newlib process heap. */
++        alignas(os::MemoryPageSize) constinit u8 g_query_server_heap[16_KB];
++        constinit lmem::HeapHandle g_query_server_heap_handle = nullptr;
++        constinit sf::ExpHeapMemoryResource g_query_server_memory_resource;
++        constinit bool g_query_server_allocator_ready = false;
++
+         constexpr size_t MaxServers = 0;
+         util::TypedStorage<sf::hipc::ServerManager<MaxServers>> g_query_server_storage;
+ 
+@@ -59,13 +65,23 @@ namespace ams::sf::hipc::impl {
+     void RegisterMitmQueryHandle(os::NativeHandle query_handle, ServerManagerBase::MitmQueryFunction query_func) {
+         std::scoped_lock lk(g_query_server_lock);
+ 
++        if (AMS_UNLIKELY(!g_query_server_allocator_ready)) {
++            g_query_server_heap_handle = lmem::CreateExpHeap(g_query_server_heap, sizeof(g_query_server_heap), lmem::CreateOption_ThreadSafe);
++            AMS_ABORT_UNLESS(g_query_server_heap_handle != nullptr);
++            g_query_server_memory_resource.Attach(g_query_server_heap_handle);
++            g_query_server_allocator_ready = true;
++        }
++
+         if (AMS_UNLIKELY(!g_constructed_server)) {
+             util::ConstructAt(g_query_server_storage);
+             g_constructed_server = true;
+         }
+ 
+-        /* TODO: Better object factory? */
+-        R_ABORT_UNLESS(GetReference(g_query_server_storage).RegisterSession(query_handle, cmif::ServiceObjectHolder(sf::CreateSharedObjectEmplaced<IMitmQueryService, MitmQueryService>(query_func))));
++        auto service_object = sf::CreateSharedObjectEmplaced<IMitmQueryService, MitmQueryService>(
++            static_cast<MemoryResource *>(std::addressof(g_query_server_memory_resource)), query_func);
++        AMS_ABORT_UNLESS(service_object.Get() != nullptr);
++        SharedPointer<IMitmQueryService> shared_service(std::move(service_object));
++        R_ABORT_UNLESS(GetReference(g_query_server_storage).RegisterSession(query_handle, cmif::ServiceObjectHolder(std::move(shared_service))));
+ 
+         if (AMS_UNLIKELY(!g_registered_any)) {
+             R_ABORT_UNLESS(os::CreateThread(std::addressof(g_query_server_process_thread), &QueryServerProcessThreadMain, GetPointer(g_query_server_storage), g_server_process_thread_stack, sizeof(g_server_process_thread_stack), AMS_GET_SYSTEM_THREAD_PRIORITY(mitm_sf, QueryServerProcessThread)));
+diff --git a/libstratosphere/source/socket/impl/socket_api.os.horizon.cpp b/libstratosphere/source/socket/impl/socket_api.os.horizon.cpp
+index 97afc515..126029ba 100644
+--- a/libstratosphere/source/socket/impl/socket_api.os.horizon.cpp
++++ b/libstratosphere/source/socket/impl/socket_api.os.horizon.cpp
+@@ -292,7 +292,7 @@ namespace ams::socket::impl {
+         }
+ 
+         /* Perform the call. */
+-        socklen_t length;
++        socklen_t length = static_cast<socklen_t>(*out_addr_len);
+         Errno error = Errno::ESuccess;
+         int result  = ::bsdRecvFrom(desc, buffer, buffer_size, static_cast<int>(flags), ConvertForLibnx(out_address), std::addressof(length));
+         TranslateResultToBsdError(error, result);
+@@ -522,7 +522,7 @@ namespace ams::socket::impl {
+         }
+ 
+         /* Perform the call. */
+-        socklen_t length;
++        socklen_t length = static_cast<socklen_t>(*out_addr_len);
+         Errno error = Errno::ESuccess;
+         int result  = ::bsdGetSockName(desc, ConvertForLibnx(out_address), std::addressof(length));
+         TranslateResultToBsdError(error, result);

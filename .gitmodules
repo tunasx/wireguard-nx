@@ -4,4 +4,10 @@
 
 [submodule "common/lib/Atmosphere-libs"]
 	path = common/lib/Atmosphere-libs
-	url = https://github.com/chrisbraucker/Atmosphere-libs.git
+	url = https://github.com/Atmosphere-NX/Atmosphere-libs.git
+[submodule "common/lib/libnx"]
+	path = common/lib/libnx
+	url = https://github.com/switchbrew/libnx.git
+[submodule "integrations/moonlight/upstream"]
+	path = integrations/moonlight/upstream
+	url = https://github.com/UnderwaterOverground/wireguard-nx.git

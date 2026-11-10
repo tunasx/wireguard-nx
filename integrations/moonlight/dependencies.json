@@ -1,0 +1,9 @@
+{
+  "engine_repository": "https://github.com/UnderwaterOverground/wireguard-nx",
+  "engine_commit": "35d162b0389128a3cd03528c7112263ec3684a57",
+  "atmosphere_repository": "https://github.com/Atmosphere-NX/Atmosphere",
+  "atmosphere_commit": "6bfe5b8b26dd3fa1b5d739fda75cd501bfd23138",
+  "libnx_commit": "b156b4774fb2df7b93402169509266da7547fc4c",
+  "libtesla_commit": "f766e9b607a05e9756843cbd62b3bfb98be1646c",
+  "rust_toolchain": "nightly-2026-09-25"
+}

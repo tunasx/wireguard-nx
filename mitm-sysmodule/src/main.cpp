@@ -7,6 +7,8 @@
 #include "tunnel_flow_worker.hpp"
 #include "wgnx/build_info.hpp"
 
+static_assert(ams::hos::Version_Max >= ams::hos::Version_23_0_1, "WireGuard-NX requires Atmosphere-libs with HOS 23.0.1 support");
+
 namespace ams {
 
 void Main() {

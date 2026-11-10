@@ -413,6 +413,7 @@ $(FUZZ_RESOLVER_RESULT_TARGET): Makefile $(FUZZ_RESOLVER_RESULT_SOURCES) $(FUZZ_
 	@$(FUZZ_CXX) $(FUZZ_COMMON_FLAGS) $(HOST_TEST_INCLUDES) $(addprefix $(CURDIR)/,$(FUZZ_RESOLVER_RESULT_SOURCES)) -o $(FUZZ_RESOLVER_RESULT_TARGET)
 
 libs	:
+	@$(PYTHON) $(TOPDIR)/../tools/prepare_atmosphere_libs.py
 	@$(foreach lib,$(LIBNAMES),$(MAKE) --no-print-directory -C $(lib) && ) true
 
 $(LIBNAMES)	:

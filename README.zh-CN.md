@@ -2,6 +2,11 @@
 
 本 fork 为管理程序（NRO）和 Ultrahand 悬浮菜单（OVL）增加英文 / 简体中文支持，并通过 GitHub Actions 编译四个组件。
 
+如果目标是 **Switch 自己连接 WireGuard，再用 Moonlight 访问家里 PC**，请使用
+**Actions → Build Moonlight packages** 的独立安装包，并先阅读
+[Moonlight 安装与迁移说明](integrations/moonlight/README.zh-CN.md)。它采用已有 TCP/UDP
+接管实现，需要停用下面旧实验模块的 EAD0/EAD3 自启。
+
 ## 下载与安装
 
 1. 打开本仓库的 **Actions → Build Switch packages**，选择成功的运行。
@@ -27,6 +32,17 @@
 菜单复用 libultrahand 的中文字库支持。管理程序改用 UTF-8 字体渲染，直接读取 Switch 系统共享字体；安装包不包含 Nintendo 字体。管理程序按方向键上/下滚动，+/- 退出，其余调试操作与上游一致。
 
 ## 构建及验证
+
+系统模块现使用官方 Atmosphere-libs 的固定提交，包含系统 **23.0.1** 的支持，
+并保留项目所需的 MITM 内存分配及 socket 修复。旧依赖只接受 22.1.x，
+会在 23.x 上进入主程序前触发 `std::abort (0xFFE)`。
+同时固定了包含 23.x 文件系统接口的官方 libnx；Actions 会先从源码构建并安装它。
+更新已有源码后，请同步子模块并清理旧构建；具体命令见
+[`common/patches/README.md`](common/patches/README.md)。
+该适配仍需在真机上确认启动、连接及关闭行为。
+
+Actions 另提供 `wireguard-nx-debug-symbols`，保存两个系统模块的 ELF、链接映射
+及构建依赖记录。报错时请保留对应安装包同一次构建的调试文件。
 
 Actions 支持推送、Pull Request 和手动运行。使用 devkitPro 的 `devkita64` 容器，递归拉取固定提交的子模块，编译 WireGuard 系统模块、MITM 系统模块、管理程序和悬浮菜单，并输出 SD 卡目录结构的 ZIP。宿主机协议测试、MITM 测试、语言回退测试和格式占位符检查在独立任务中执行。
 

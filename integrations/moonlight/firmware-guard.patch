@@ -1,0 +1,12 @@
+diff --git a/switch/sysmodule/source/main.cpp b/switch/sysmodule/source/main.cpp
+--- a/switch/sysmodule/source/main.cpp
++++ b/switch/sysmodule/source/main.cpp
+@@ -30,6 +30,8 @@
+ //                                    starts us (its system tick): not a boot start
+ //   config/wireguard-nx/sysmodule.log (+ .1 from the previous boot)
+ #include <stratosphere.hpp>
++
++static_assert(ams::hos::Version_Max >= ams::hos::Version_23_0_1, "Moonlight build requires HOS 23.0.1 support");
+ 
+ #include <arpa/inet.h>
+ #include <netinet/in.h>
