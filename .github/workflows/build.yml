@@ -31,6 +31,12 @@ jobs:
         run: |
           apt-get update
           apt-get install -y --no-install-recommends build-essential python3 zip
+      - name: Prepare official Atmosphere-libs for HOS 23.0.1
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE/common/lib/Atmosphere-libs"
+          python3 tools/test_prepare_atmosphere_libs.py
+          python3 tools/prepare_atmosphere_libs.py
       - name: Build UTF-8 manager
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -41,6 +47,25 @@ jobs:
         run: make -C wg-sysmodule dist -j2
       - name: Build MITM sysmodule
         run: make -C mitm-sysmodule dist -j2
+      - name: Check sysmodule resource budgets
+        run: make -C wg-sysmodule resource-report
+      - name: Record build dependencies
+        run: |
+          git rev-parse HEAD > BUILD-DEPENDENCIES.txt
+          git submodule status --recursive >> BUILD-DEPENDENCIES.txt
+          sha256sum common/patches/atmosphere-libs-wgnx.patch >> BUILD-DEPENDENCIES.txt
+          "$DEVKITPRO/devkitA64/bin/aarch64-none-elf-g++" --version >> BUILD-DEPENDENCIES.txt
+      - name: Save sysmodule debug symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: wireguard-nx-debug-symbols
+          path: |
+            wg-sysmodule/out/*.elf
+            wg-sysmodule/build/*.map
+            mitm-sysmodule/out/*.elf
+            mitm-sysmodule/build/*.map
+            BUILD-DEPENDENCIES.txt
+          if-no-files-found: error
       - name: Assemble SD card package
         run: |
           mkdir -p package/switch/.overlays package/switch/wireguard-nx package/config/wireguard-nx
@@ -52,6 +77,7 @@ jobs:
           cp README.zh-CN.md package/README.zh-CN.md
           cp LICENSE package/LICENSE
           git rev-parse HEAD > package/BUILD-COMMIT.txt
+          cp BUILD-DEPENDENCIES.txt package/
           cd package
           zip -r ../wireguard-nx-sdcard.zip .
       - uses: actions/upload-artifact@v4

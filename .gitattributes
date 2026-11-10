@@ -1,1 +1,2 @@
 wg-sysmodule/src/ip/third_party/lwip/** whitespace=-trailing-space,-blank-at-eof
+common/patches/*.patch text eol=lf whitespace=-blank-at-eol

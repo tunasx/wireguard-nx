@@ -46,6 +46,12 @@ Make sure that the submodule is initialized.
 git submodule update --init --recursive
 ```
 
+The sysmodules use the official Atmosphere-libs revision with Horizon 23.0.1
+support. Their builds automatically apply the retained WireGuard-NX library
+fixes. When updating an existing checkout, synchronize the submodule URL and
+clean old binaries as described in [the library integration notes](common/patches/README.md).
+GitHub Actions also saves matching ELF files in `wireguard-nx-debug-symbols`.
+
 Run the deterministic protocol suite on the development host with:
 
 ```bash

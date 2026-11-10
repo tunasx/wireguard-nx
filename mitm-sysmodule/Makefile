@@ -170,6 +170,7 @@ $(HOST_SANITIZE_TARGET): Makefile $(HOST_TEST_SOURCES) src/bsd_endpoint.hpp src/
 	@$(HOST_CXX) $(HOST_TEST_CXXFLAGS) -fsanitize=address,undefined -fno-omit-frame-pointer $(HOST_TEST_INCLUDES) $(addprefix $(CURDIR)/,$(HOST_TEST_SOURCES)) -o $(HOST_SANITIZE_TARGET)
 
 libs:
+	@$(PYTHON) $(TOPDIR)/../tools/prepare_atmosphere_libs.py
 	@$(foreach lib,$(LIBNAMES),$(MAKE) --no-print-directory -C $(lib) && ) true
 
 $(BUILD): libs

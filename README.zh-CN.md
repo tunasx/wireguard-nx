@@ -28,6 +28,16 @@
 
 ## 构建及验证
 
+系统模块现使用官方 Atmosphere-libs 的固定提交，包含系统 **23.0.1** 的支持，
+并保留项目所需的 MITM 内存分配及 socket 修复。旧依赖只接受 22.1.x，
+会在 23.x 上进入主程序前触发 `std::abort (0xFFE)`。
+更新已有源码后，请同步子模块并清理旧构建；具体命令见
+[`common/patches/README.md`](common/patches/README.md)。
+该适配仍需在真机上确认启动、连接及关闭行为。
+
+Actions 另提供 `wireguard-nx-debug-symbols`，保存两个系统模块的 ELF、链接映射
+及构建依赖记录。报错时请保留对应安装包同一次构建的调试文件。
+
 Actions 支持推送、Pull Request 和手动运行。使用 devkitPro 的 `devkita64` 容器，递归拉取固定提交的子模块，编译 WireGuard 系统模块、MITM 系统模块、管理程序和悬浮菜单，并输出 SD 卡目录结构的 ZIP。宿主机协议测试、MITM 测试、语言回退测试和格式占位符检查在独立任务中执行。
 
 编译成功不等于真机验证完成。安装前请备份现有配置；本项目上游仍标注为实验性，不能仅凭隧道握手成功就假定所有游戏或 Moonlight 流量均可通过。有关透明流量接管的限制，请查阅上游 README 和 `mitm-sysmodule/README.md`。
