@@ -36,8 +36,8 @@ struct WireGuardPeer {
 class GuiMain : public tsl::Gui {
   private:
     std::vector<WireGuardPeer> m_peers;
-    tsl::elm::CustomDrawer* m_peerInfoDrawer;
-    WireGuardPeer* m_activePeer;
+    tsl::elm::CustomDrawer* m_peerInfoDrawer = nullptr;
+    WireGuardPeer* m_activePeer = nullptr;
 
   public:
     GuiMain();

@@ -20,7 +20,7 @@ BUILD		:=	build
 OUTDIR		:=	out
 SOURCES		:=	src
 DATA		:=	data
-INCLUDES	:=	../common/include
+INCLUDES	:=	../common/include ../overlay/lib/libultrahand/libtesla/include
 
 APP_TITLE	:=	WireGuard-NX
 APP_AUTHOR	:=	chrisbraucker

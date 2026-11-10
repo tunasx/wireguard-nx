@@ -1,12 +1,14 @@
 #define TESLA_INIT_IMPL // If you have more than one file using the tesla header, only define this in the main one
 #include <tesla.hpp>
 #include "GuiMain.hpp"
+#include "wgnx/i18n.hpp"
 
 class OverlayWireguard : public tsl::Overlay {
   public:
     // libtesla already initialized fs, hid, pl, pmdmnt, hid:sys and set:sys
     virtual void initServices() override {
         pmshellInitialize();
+        wgnx::i18n::initialize();
     }
     virtual void exitServices() override {
         pmshellExit();

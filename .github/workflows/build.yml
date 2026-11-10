@@ -1,0 +1,58 @@
+name: Build Switch packages
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Protocol and MITM regression tests
+        run: |
+          make -C wg-sysmodule test -j2
+          make -C mitm-sysmodule test -j2
+          c++ -std=c++17 -Wall -Wextra -Werror -Icommon/include tools/test_i18n.cpp -o /tmp/test-i18n
+          /tmp/test-i18n
+          python3 tools/check_translations.py
+  switch:
+    runs-on: ubuntu-24.04
+    container: devkitpro/devkita64:latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Install build utilities
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential python3 zip
+      - name: Build all four components
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          make -C wg-sysmodule dist -j2
+          make -C mitm-sysmodule dist -j2
+          make -C manager -j2
+          make -C overlay -j2
+      - name: Assemble SD card package
+        run: |
+          mkdir -p package/switch/.overlays package/switch/wireguard-nx package/config/wireguard-nx
+          cp -r wg-sysmodule/out/atmosphere package/
+          cp -r mitm-sysmodule/out/atmosphere package/
+          cp manager/out/wireguard-nx.nro package/switch/wireguard-nx/
+          cp overlay/out/wireguard-nx.ovl package/switch/.overlays/
+          cp config/*.example package/config/wireguard-nx/
+          cp README.zh-CN.md package/README.zh-CN.md
+          cp LICENSE package/LICENSE
+          git rev-parse HEAD > package/BUILD-COMMIT.txt
+          cd package
+          zip -r ../wireguard-nx-sdcard.zip .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wireguard-nx-sdcard
+          path: wireguard-nx-sdcard.zip
+          if-no-files-found: error

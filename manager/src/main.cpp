@@ -1,3 +1,6 @@
+#include "wgnx/i18n.hpp"
+using wgnx::i18n::tr;
+
 /*
   run this example from nxlink
 
@@ -17,11 +20,14 @@
 
 #include <switch.h>
 
+#include "display.hpp"
 #include "wgnx/client.hpp"
 #include "wgnx/build_info.hpp"
 
 int main(int argc, char** argv) {
-    consoleInit(NULL);
+    wgnx::i18n::initialize();
+    ManagerDisplay display;
+    display.initialize();
 
     // Configure our supported input layout: a single player with standard controller styles
     padConfigureInput(1, HidNpadStyleSet_NpadStandard);
@@ -32,62 +38,61 @@ int main(int argc, char** argv) {
 
     Result rc;
 
-    printf("Initializing socket\n");
+    display.print(tr("Initializing socket\n"));
     if (R_FAILED(rc = socketInitializeDefault()))
         diagAbortWithResult(rc);
 
-    printf("Initializing nifm\n");
+    display.print(tr("Initializing nifm\n"));
     if (R_FAILED(rc = nifmInitialize(NifmServiceType_User)))
         diagAbortWithResult(rc);
 
-    printf("Exit by pressing + or -\n");
-    printf("Press ZL to send a debug ping to 10.13.13.1 through the tunnel\n");
-    printf("Press ZR to send a debug ping to 1.1.1.1 through the tunnel\n");
-    printf("Press X to recreate the active tunnel's UDP binding\n");
+    display.print(tr("Exit by pressing + or -\n"));
+    display.print(tr("Press ZL to send a debug ping to 10.13.13.1 through the tunnel\n"));
+    display.print(tr("Press ZR to send a debug ping to 1.1.1.1 through the tunnel\n"));
+    display.print(tr("Press X to recreate the active tunnel's UDP binding\n"));
 
     // Display arguments sent from nxlink
-    printf("%d arguments\n", argc);
-    printf("Manager Version: %s\n", wgnx::build_info::VersionWithBuild);
+    display.print(tr("%d arguments\n"), argc);
+    display.print(tr("Manager Version: %s\n"), wgnx::build_info::VersionWithBuild);
 
     for (int i = 0; i < argc; i++) {
-        printf("argv[%d] = %s\n", i, argv[i]);
+        display.print("argv[%d] = %s\n", i, argv[i]);
     }
 
     if (__nxlink_host.s_addr != 0) {
         // the host ip where nxlink was launched
-        printf("nxlink host is %s\n", inet_ntoa(__nxlink_host));
+        display.print(tr("nxlink host is %s\n"), inet_ntoa(__nxlink_host));
 
         fprintf(stdout, "stdout output will continue on client\n");
 
         nxlinkConnectToHost(false, true);
 
         fprintf(stderr, "stderr output now shows on host\n");
-        printf("see?\n");
     }
 
     u32 ip;
     nifmGetCurrentIpAddress(&ip);
-    printf("Current IP: %u.%u.%u.%u\n", ip & 0xFF, (ip >> 8) & 0xFF, (ip >> 16) & 0xFF, (ip >> 24) & 0xFF);
+    display.print(tr("Current IP: %u.%u.%u.%u\n"), ip & 0xFF, (ip >> 8) & 0xFF, (ip >> 16) & 0xFF, (ip >> 24) & 0xFF);
 
     if (wgnx::client::IsServiceRunning()) {
         u32 api_version = 0;
         if (R_SUCCEEDED(wgnx::client::GetApiVersion(&api_version))) {
-            printf("WireGuard IPC API: v%u\n", api_version);
+            display.print(tr("WireGuard IPC API: v%u\n"), api_version);
         }
 
         wgnx::BuildInfo sysmodule_build = {};
         if (R_SUCCEEDED(wgnx::client::GetBuildInfo(&sysmodule_build))) {
-            printf(
-                "Sysmodule Version: %s-%s\n",
-                sysmodule_build.version[0] != '\0' ? sysmodule_build.version : "unknown",
-                sysmodule_build.build_id[0] != '\0' ? sysmodule_build.build_id : "unknown"
+            display.print(
+                tr("Sysmodule Version: %s-%s\n"),
+                sysmodule_build.version[0] != '\0' ? sysmodule_build.version : tr("unknown"),
+                sysmodule_build.build_id[0] != '\0' ? sysmodule_build.build_id : tr("unknown")
             );
         }
 
         wgnx::DaemonStatus status{};
         if (R_SUCCEEDED(wgnx::client::GetDaemonStatus(&status))) {
-            printf(
-                "WireGuard peers: %u | active=%d | autostart=%d | flags=0x%08X\n",
+            display.print(
+                tr("WireGuard peers: %u | active=%d | autostart=%d | flags=0x%08X\n"),
                 status.peer_count,
                 status.active_peer_index,
                 status.auto_start_peer_index,
@@ -103,45 +108,45 @@ int main(int argc, char** argv) {
                 const char* endpoint = ((peer.flags & wgnx::PeerFlag_Active) != 0 && (peer.flags & wgnx::PeerFlag_HasResolvedEndpoint) != 0)
                                            ? peer.resolved_endpoint
                                            : peer.endpoint;
-                printf(
-                    "[%u] %s | %s | endpoint=%s | local_pub=%s | state=%s stage=%s flags=0x%02X | hs=%d rx_age=%d tx_age=%d",
+                display.print(
+                    tr("[%u] %s | %s | endpoint=%s | local_pub=%s | state=%s stage=%s flags=0x%02X | hs=%d rx_age=%d tx_age=%d"),
                     i,
                     peer.name,
                     peer.address,
                     endpoint,
-                    peer.derived_public_key[0] != '\0' ? peer.derived_public_key : "<unavailable>",
-                    wgnx::GetPeerRuntimeStateName(static_cast<wgnx::PeerRuntimeState>(peer.runtime_state)),
-                    wgnx::GetPeerErrorStageName(static_cast<wgnx::PeerErrorStage>(peer.error_stage)),
+                    peer.derived_public_key[0] != '\0' ? peer.derived_public_key : tr("<unavailable>"),
+                    tr(wgnx::GetPeerRuntimeStateName(static_cast<wgnx::PeerRuntimeState>(peer.runtime_state))),
+                    tr(wgnx::GetPeerErrorStageName(static_cast<wgnx::PeerErrorStage>(peer.error_stage))),
                     peer.flags,
                     peer.last_handshake_seconds,
                     peer.last_rx_seconds,
                     peer.last_tx_seconds
                 );
-                printf(
-                    " | probe=%s/%s/%ds",
-                    wgnx::GetDebugTriggerActionName(static_cast<wgnx::DebugTriggerAction>(peer.debug_probe_action)),
-                    wgnx::GetDebugProbeStatusName(static_cast<wgnx::DebugProbeStatus>(peer.debug_probe_status)),
+                display.print(
+                    tr(" | probe=%s/%s/%ds"),
+                    tr(wgnx::GetDebugTriggerActionName(static_cast<wgnx::DebugTriggerAction>(peer.debug_probe_action))),
+                    tr(wgnx::GetDebugProbeStatusName(static_cast<wgnx::DebugProbeStatus>(peer.debug_probe_status))),
                     peer.last_debug_probe_seconds
                 );
-                printf(
-                    " | ka=%us err=%s (0x%08X)\n",
+                display.print(
+                    tr(" | ka=%us err=%s (0x%08X)\n"),
                     peer.persistent_keepalive_interval,
-                    wgnx::GetPeerErrorCodeName(static_cast<wgnx::PeerErrorCode>(peer.last_error_code)),
+                    tr(wgnx::GetPeerErrorCodeName(static_cast<wgnx::PeerErrorCode>(peer.last_error_code))),
                     peer.last_error_code
                 );
             }
         }
     } else {
-        printf("WireGuard IPC service '%s' is not running.\n", wgnx::ServiceName);
+        display.print(tr("WireGuard IPC service '%s' is not running.\n"), wgnx::ServiceName);
     }
 
     u32 hosversion = hosversionGet();
     bool is_atmos = hosversionIsAtmosphere();
-    printf("HOS Version: %u.%u.%u", (hosversion >> 16) & 0xFF, (hosversion >> 8) & 0xFF, hosversion & 0xFF);
+    display.print(tr("HOS Version: %u.%u.%u"), (hosversion >> 16) & 0xFF, (hosversion >> 8) & 0xFF, hosversion & 0xFF);
     if (is_atmos) {
-        printf("|AMS");
+        display.print("|AMS");
     }
-    printf("\n");
+    display.print("\n");
 
     // Main loop
     while (appletMainLoop()) {
@@ -159,13 +164,13 @@ int main(int argc, char** argv) {
                 (kDown & HidNpadButton_ZL) != 0 ? wgnx::DebugTriggerAction::PingTunnelPeer : wgnx::DebugTriggerAction::PingPublicDns;
 
             if (!wgnx::client::IsServiceRunning()) {
-                printf("TriggerDebugPayload: IPC service is not running.\n");
+                display.print(tr("TriggerDebugPayload: IPC service is not running.\n"));
             } else {
                 const Result trigger_rc = wgnx::client::TriggerDebugPayload(action);
-                printf(
-                    "TriggerDebugPayload(%s): %s (0x%08X)\n",
-                    wgnx::GetDebugTriggerActionName(action),
-                    R_SUCCEEDED(trigger_rc) ? "queued" : "failed",
+                display.print(
+                    tr("TriggerDebugPayload(%s): %s (0x%08X)\n"),
+                    tr(wgnx::GetDebugTriggerActionName(action)),
+                    R_SUCCEEDED(trigger_rc) ? tr("queued") : tr("failed"),
                     trigger_rc
                 );
             }
@@ -173,17 +178,20 @@ int main(int argc, char** argv) {
 
         if (kDown & HidNpadButton_X) {
             if (!wgnx::client::IsServiceRunning()) {
-                printf("BumpUdpBinding: IPC service is not running.\n");
+                display.print(tr("BumpUdpBinding: IPC service is not running.\n"));
             } else {
                 const Result bump_rc = wgnx::client::BumpUdpBinding();
-                printf("BumpUdpBinding: %s (0x%08X)\n", R_SUCCEEDED(bump_rc) ? "queued" : "failed", bump_rc);
+                display.print(tr("BumpUdpBinding: %s (0x%08X)\n"), R_SUCCEEDED(bump_rc) ? tr("queued") : tr("failed"), bump_rc);
             }
         }
 
-        consoleUpdate(NULL);
+        if (kDown & HidNpadButton_Up) display.scroll(-1);
+        if (kDown & HidNpadButton_Down) display.scroll(1);
+        display.update();
     }
 
     socketExit();
-    consoleExit(NULL);
+    display.shutdown();
+    nifmExit();
     return 0;
 }

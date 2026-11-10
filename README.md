@@ -1,5 +1,11 @@
 # WireGuard-NX
 
+[简体中文：安装、语言设置与 Actions 构建](README.zh-CN.md)
+
+This fork adds English / Simplified Chinese UI localization and GitHub Actions builds.
+Both the manager and overlay select the system language, with an optional
+`sd:/config/wireguard-nx/language.txt` override (`en`, `zh-CN`, or `auto`).
+
 A work-in-progress project to bring the WireGuard VPN to Atmosphère.
 
 Current state: Userspace WireGuard implementation is able to send and receive IP packets inside the sysmodule.
